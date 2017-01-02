@@ -5,6 +5,7 @@ def check_sum_of_ID(path_of_a_file):
 
     id_counter = 0
 
+    northpole_room_id = ""
     for record in data:
         id_adding_flag = True
         record = record.replace("-","").replace("[","").replace("]","")
@@ -14,6 +15,7 @@ def check_sum_of_ID(path_of_a_file):
         id_number = int(record[-3:])
         record = record.replace(record[-3:],"")
         character_counter = {}
+        translated_record = ""
         for letter in range(97, 123):
             character_counter[str(chr(letter))] = 0
         for character in record:
@@ -32,8 +34,18 @@ def check_sum_of_ID(path_of_a_file):
             id_counter += id_number
         print(id_counter)
         for character in record:
-
-{}
+            #print(ord(character))
+            #print(ord(character)+id_number)
+            #print((ord(character)+id_number)%26)
+            if (id_number%26)+ord(character) <= 122:
+                translated_record += chr((id_number % 26) + ord(character))
+            else:
+                translated_record += chr((id_number % 26) + ord(character)-26)
+            #print(((ord(character)+id_number)%26)+97)
+            #print(translated_record)
+        if "northpole" in  translated_record:
+            northpole_room_id = id_number
+    print(northpole_room_id)
 
 
 
