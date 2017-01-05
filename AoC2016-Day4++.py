@@ -2,7 +2,7 @@ def check_sum_of_ID(path_of_a_file):
     file = open(path_of_a_file, 'r')
     data = file.read()
     data = data.split("\n", len(data)-1)
-
+    northpole_line = ""
     id_counter = 0
 
     northpole_room_id = ""
@@ -44,9 +44,10 @@ def check_sum_of_ID(path_of_a_file):
             #print(((ord(character)+id_number)%26)+97)
             #print(translated_record)
         if "northpole" in  translated_record:
+            northpole_line = translated_record
             northpole_room_id = id_number
     print(northpole_room_id)
-
+    print(northpole_line)
 
 
 
