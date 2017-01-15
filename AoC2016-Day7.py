@@ -7,7 +7,8 @@ def check_if_ip_supports_tls(path_of_a_file):
     ip_with_tsl_support = 0
     split_IP_part_check = {"non-bracketed" : 0, "bracketed" : 0}
 
-    for line in data:
+
+def splitting_ip(line):
         temp_string = ""
         print("Whole Line: " + line)
         for character in line:
@@ -55,5 +56,11 @@ def check_if_ip_supports_tls(path_of_a_file):
 
 
     print("IP with TSL support:" + str(ip_with_tsl_support))
+
+def check_for_aba(sequence):
+    for supernet_character_index in range(len(sequence)-2):
+        if sequence[supernet_character_index]
+
+
 
 check_if_ip_supports_tls("C:\\Users\\Poostaq\\Dysk Google\\Projekty\\Advent of Code\\day7 input")
