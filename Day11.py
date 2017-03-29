@@ -1,113 +1,181 @@
-# -*- coding: UTF-8 -*-
-import Queue
+import copy
 import itertools
+from multiprocessing import Queue
 
-class FloorObject:
-    def __init__(self, object_type, radioisotope="none"):
-        self.object_type = object_type
-        self.radioisotope = radioisotope
+class ShortestWay():
+    actualIsotopesPositions = []
+    actualElevatorPosition = 1
+    listOfSnapshots = []
+    numberOfSteps = 0
 
-    def to_string(self):
-        return self.object_type + self.radioisotope
+    def __init__(self):
+        opened_file = open("C:\\Users\\Poostaq\\Dysk Google\\Projekty\\Advent of Code\\test input", 'r')
+        data = opened_file.read()
+        data = data.split("\n", len(data) - 1)
+        for line in data:
+            line = line.replace("The first ", "").replace("The second ", "").replace("floor contains ", ""). \
+                replace("The third ", "").replace("The fourth ", "").replace("a ", ""). \
+                replace("nothing relevant", "").replace(".", "").replace("-compatible", "").replace("and ", "").replace(",", "")
+            line = line.split(" ", )
+            print(line)
+            floor_components = []
+            for element_index in range(0,len(line),2):
+                if len(line[element_index]) > 0:
+                    component = [line[element_index],line[element_index+1]]
+                    floor_components.append(component)
+                    print("appending " + str(component))
+            self.actualIsotopesPositions.append(floor_components)
+        print(self.actualIsotopesPositions)
+        self.numberOfSteps = 0
+        self.actualElevatorPosition = 1
 
-
-class Snapshot:
-    def __init__(self, actual_locations, elevator_positon):
-        self.actual_locations = actual_locations
-        self.elevator_position = elevator_positon
-
-    def generate_snapshot_stamp(self):
+    def generateSnapshot(self,
+                         snapshotPositions = actualIsotopesPositions,
+                         snapshotElevator = actualElevatorPosition,
+                         snapshotSteps = numberOfSteps):
         snapshot = ""
-        for floor in print_names_of_objects(self.actual_locations):
-            floor = sorted(floor)
+        radioisotope = 0
+        elementType = 1
+        for floor in snapshotPositions:
             for element in floor:
-                snapshot += element
-        snapshot += str(self.elevator_position)
-        print(snapshot)
-        return snapshot
+                snapshot+=element[radioisotope]+"."+element[elementType]+","
+            snapshot = snapshot[:-1]
+            snapshot += ";"
+        snapshot = snapshot[:-1]
+        return [snapshot, snapshotElevator, snapshotSteps]
 
-
-def create_initial_locations(path_of_a_file):
-    file = open(path_of_a_file, 'r')
-    data = file.read()
-    data = data.split("\n", len(data) - 1)
-    clear_data = []
-    for line in data:
-        line = line.replace("The first ", "").replace("The second ", "").replace("floor contains ", "").\
-            replace("The third ", "").replace("The fourth ", "").replace("a ", "").\
-            replace("nothing relevant", "").replace(".", "").replace("-compatible", "").replace("and ", "")
-        line = line.split(", ",)
-        floor_components = []
-        for element in line:
-            if "generator" in element:
-                radioisotope = element.replace(" generator", "")
-                component = FloorObject("generator", radioisotope)
-                floor_components.append(component)
-            elif "microchip" in element:
-                radioisotope = element.replace(" microchip", "")
-                component = FloorObject("microchip", radioisotope)
-                floor_components.append(component)
+    def unpackSnapshot(self, snapshot):
+        self.actualIsotopesPositions = [[],[],[],[]]
+        snapshotString = snapshot[0]
+        snapshotString = snapshotString.split(';')
+        for floorIndex in range(0,len(snapshotString)):
+            if len(snapshotString[floorIndex]) == 0:
+                continue
             else:
-                pass
-        clear_data.append(floor_components)
-    return clear_data
+                tempList = []
+                floor = snapshotString[floorIndex].split(",")
+                for element in floor:
+                    element = element.split(".")
+                    tempList.append(element)
+                self.actualIsotopesPositions[floorIndex] = tempList
+        self.actualElevatorPosition = snapshot[1]
+        self.numberOfSteps = snapshot[2]
 
+    def tryMovingElevator(self, direction, carriedElements):
+        #direction to +1 albo -1
+        element_locations = copy.deepcopy(self.actualIsotopesPositions)
+        elevator_position = self.actualElevatorPosition
+        for element in carriedElements:
+            #print(carriedElements)
+            #print(element)
+            #print(element_locations[elevator_position-1])
+            #print(self.actualIsotopesPositions[elevator_position-1])
+            element_locations[elevator_position-1].remove(element)
+            element_locations[elevator_position-1+direction].append(element)
+        if self.doesNothingBlow(element_locations, carriedElements):
+            return [element_locations, elevator_position+direction]
+        #print("Przenioslem" + str(carriedElements))
 
-def print_names_of_objects(location_of_objects):
-    names_of_objects = []
-    for floor in location_of_objects:
-        floor_object_names = []
-        floor_object_names.append(" ")
-        for element in floor:
-            floor_object_names.append(element.radioisotope + element.object_type)
-        names_of_objects.append(floor_object_names)
-    return names_of_objects
-
-
-def is_searched_stamp(Snapshot):
-    if len(Snapshot.actual_locations[3]) == 10:
+    def doesNothingBlow(self, elementsPositions, movedElements):
+        if self.doesNotElevatorBlow(movedElements):
+            return False
+        if self.doesNotFloorBlow(elementsPositions):
+            return False
+        #print("Nie wybuchlo przeniesienie " + str(movedElements))
         return True
-    else:
-        return False
 
-# DO MOŻLIWEJ OPTYMALIZACJI
-def create_possible_combinations(Snapshot):
-    table_to_return = []
-    for combination in itertools.combinations(Snapshot.actual_locations[Snapshot.elevator_position-1],1):
-        table_to_return.append(combination)
-    for combination in itertools.combinations(Snapshot.actual_locations[Snapshot.elevator_position-1],2):
-        table_to_return.append(combination)
-    return table_to_return
+    def doesNotElevatorBlow(self, combination):
+        if len(combination) == 2:
+            if combination[0][0] != combination[1][0] and combination[0][1] != combination[1][1]:
+                return False
+        return True
 
-def try_moving_element(snapshot, combination, destination_floor):
-    element_locations = snapshot.actual_locations
-    for element in combination:
-        element_locations[snapshot.elevator_position-1].remove(element)
-        element_locations[destination_floor-1].append(element)
+    def doesNotFloorBlow(self, elementsPositions):
+        for floor in elementsPositions:
+            tempList = copy.deepcopy(floor)
+            for elementIndex in range(0,len(floor)):
+                #print("Porównuję: " + str(floor[elementIndex]))
+                for iterator in range(0,len(floor)):
+                    #print("porównany do: " + str(floor[iterator]))
+                    if elementIndex == iterator:
+                        continue
+                    if floor[elementIndex][0] == floor[iterator][0]:
+                        if floor[elementIndex] in tempList:
+                            #print("Usuwamy z listy " + str(tempList) + " element " + str(floor[elementIndex]) + " i " + str(floor[iterator]))
+                            tempList.remove(floor[elementIndex])
+                            tempList.remove(floor[iterator])
+            #print(tempList)
+            microchips = list(filter(lambda x: x[1] == "microchip", tempList))
+            generators = list(filter(lambda x: x[1] == "generator", floor))
+            #print(microchips)
+            #print(generators)
+            if len(microchips) > 0\
+                and len(generators) > 0:
+                return False
+        return True
 
 
-def check_if_does_not_blow(elements_of_floor):
-    evaluated_floor = elements_of_floor
-    for element in evaluated_floor:
-        for i in range(len(evaluated_floor)):
-            if element.radioisotope == evaluated_floor[i].radioisotope and element.object_type != evaluated_floor[i].object_type:
-                evaluated_floor.remove(element)
-                evaluated_floor.remove(evaluated_floor[i])
-    #DO DOKONCZENIA
+    def createPossibleCombinations(self):
+        tableToReturn = []
+        for element in self.actualIsotopesPositions[self.actualElevatorPosition-1]:
+            tableContainingElement =[]
+            tableContainingElement.append(element)
+            tableToReturn.append(tableContainingElement)
+        for combination in itertools.combinations(self.actualIsotopesPositions[self.actualElevatorPosition-1], 2):
+            tableToReturn.append(combination)
+        return tableToReturn
 
-def main():
-    list_of_snapshots = []
-    list_of_snapshot_stamps = []
-    queue_for_snapshots = Queue()
-    input_locations = create_initial_locations("C:\\Users\\Poostaq\\Dysk Google\\Projekty\\Advent of Code\\day11 input")
-    starting_snapshot = Snapshot(input_locations,1,0)
-    queue_for_snapshots.put(starting_snapshot)
-    while queue_for_snapshots.qsize() > 0:
-        evaluated_snapshot = queue_for_snapshots.get()
-        if is_searched_stamp(evaluated_snapshot):
-            print(evaluated_snapshot.number_of_steps)
-            break
+    def isSearchedSnapshot(self):
+        if len(self.actualIsotopesPositions[3]) == 4:
+            return True
         else:
-            possible_combinations = create_possible_combinations(evaluated_snapshot)
-if __name__ == "__main__":
-    main()
+            return False
+
+    def findShortestPath(self):
+        queue_for_snapshots = Queue()
+        initialSnapshot = self.generateSnapshot()
+        queue_for_snapshots.put(initialSnapshot)
+        self.listOfSnapshots.append(initialSnapshot[0])
+        iterator = 0
+        while queue_for_snapshots.qsize() > 0:
+            iterator += 1
+            if iterator%10==0:
+                print(iterator)
+            evaluatedSnapshot = queue_for_snapshots.get()
+            self.unpackSnapshot(evaluatedSnapshot)
+            if self.isSearchedSnapshot():
+                print(self.numberOfSteps)
+                break
+            else:
+                possible_combinations = self.createPossibleCombinations()
+                for combination in possible_combinations:
+                    if self.actualElevatorPosition > 1:
+                        listOfLocationsAndElevatorPosition = self.tryMovingElevator(-1, combination)
+                        if listOfLocationsAndElevatorPosition != None and \
+                                self.doesNothingBlow(listOfLocationsAndElevatorPosition[0], combination):
+                            if listOfLocationsAndElevatorPosition[0] not in self.listOfSnapshots:
+                                snapshot = self.generateSnapshot(listOfLocationsAndElevatorPosition[0],
+                                                      listOfLocationsAndElevatorPosition[1],
+                                                      self.numberOfSteps+1)
+                                queue_for_snapshots.put(snapshot)
+                                self.listOfSnapshots.append(snapshot)
+                    if self.actualElevatorPosition < 4:
+                        listOfLocationsAndElevatorPosition = self.tryMovingElevator(1, combination)
+                        if listOfLocationsAndElevatorPosition != None:
+                            if self.doesNothingBlow(listOfLocationsAndElevatorPosition[0], combination) \
+                                    and listOfLocationsAndElevatorPosition[0] not in self.listOfSnapshots:
+                                snapshot = self.generateSnapshot(listOfLocationsAndElevatorPosition[0],
+                                                      listOfLocationsAndElevatorPosition[1],
+                                                      self.numberOfSteps + 1)
+                                queue_for_snapshots.put(snapshot)
+                                self.listOfSnapshots.append(snapshot)
+
+
+
+Test = ShortestWay()
+#print(Test.createPossibleCombinations())
+
+Test.findShortestPath()
+
+#print(Test.generateSnapshot())
+#print(Test.unpackSnapshot('thulium.generator,thulium.microchip,plutonium.generator,strontium.generator,;plutonium.microchip,strontium.microchip,;promethium.generator,promethium.microchip,ruthenium.generator,ruthenium.microchip,;'))
