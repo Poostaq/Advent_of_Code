@@ -48,3 +48,5 @@ class FindCodeDay12:
         return 0
 
 Test = FindCodeDay12()
+
+#komentarz
