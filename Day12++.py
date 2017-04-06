@@ -21,8 +21,6 @@ class FindCodeDay12:
             executedCommand += 1
         print(self.registers["a"])
 
-
-
     def cpy(self,value,register):
         if value in self.registers:
             self.registers[register] = self.registers[value]
