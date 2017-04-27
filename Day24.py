@@ -1,5 +1,7 @@
 import Queue
 import copy
+import itertools
+
 class Day24:
 
     position_x = 0
@@ -8,6 +10,7 @@ class Day24:
     ventilation_map = []
     points_to_visit = []
     points_coordinates = {}
+    visited_places = []
 
     def __init__(self):
         opened_file = open("C:\\Users\\Poostaq\\Dysk Google\\Projekty\\Advent of Code\\MyInput.txt", 'r')
@@ -16,9 +19,9 @@ class Day24:
         self.ventilation_map = data.split("\n", len(data) - 1)
         self.position_y = self.find_starting_y()
         self.position_x = self.find_starting_x()
-        position_0 = {"x":self.position_x, "y":self.position_y}
         self.points_to_visit = self.find_important_points()
         self.points_coordinates = self.coords_for_important_points()
+        self.visited_places = []
 
     def print_map(self):
         for line in self.ventilation_map:
@@ -96,6 +99,7 @@ class Day24:
         return None
 
     def calculate_distance_AB(self, a, b):
+        self.visited_places = []
         queue = Queue.Queue()
         initial_snapshot = self.Snapshot_augmented(a["x"], a["y"], 0)
         queue.put(initial_snapshot)
@@ -103,9 +107,53 @@ class Day24:
             snapshot = queue.get()
             possible_moves = self.check_possible_moves(snapshot.position_x, snapshot.position_y)
             for coordinates in possible_moves:
-                x = coordinates["x"]
-                y = coordinates["y"]
-        # DOKONCZYC!!!
+                if coordinates not in self.visited_places:
+                    x = coordinates["x"]
+                    y = coordinates["y"]
+                    self.visited_places.append({"x": x, "y": y})
+                    # print(len(self.visited_places))
+                    new_snapshot = self.Snapshot_augmented(x, y, snapshot.steps_made+1)
+                    if x == b["x"] and y == b["y"]:
+                        return snapshot.steps_made+1
+                    else:
+                        queue.put(new_snapshot)
+        return None
+
+    def calculate_one_path(self, list_of_elements):
+        path_length = 0
+        print(list_of_elements)
+        for element_index in range(0, len(list_of_elements)):
+            # print("New iteration")
+            target_element_coords = {"x": self.points_coordinates[list_of_elements[element_index]]["x"],
+                                    "y": self.points_coordinates[list_of_elements[element_index]]["y"]}
+            if element_index == 0:
+                # print("Iteration with 0")
+                path_length += self.calculate_distance_AB({"x": self.position_x, "y": self.position_y},
+                                                  target_element_coords)
+                # print("Sciezka ma dlugosc " + str(path_length))
+            else:
+                # print("Iteration higher than 0")
+                path_length += self.calculate_distance_AB({"x": self.points_coordinates[list_of_elements[element_index-1]]["x"],
+                                                   "y": self.points_coordinates[list_of_elements[element_index-1]]["y"]},
+                                                  target_element_coords)
+                # print("Sciezka ma dlugosc " + str(path_length))
+        return path_length
+
+    def calculate_all_AB_distances(self, list_of_elements):
+        dict_of_distances = {}
+
+
+    def calculate_all_paths(self):
+        lowest_path_length = 10000000
+        list_of_possible_paths = list(itertools.permutations(self.points_to_visit))
+        print(len(list_of_possible_paths))
+        temp_path_length = 0
+        for combination in list_of_possible_paths:
+            temp_path_length = self.calculate_one_path(combination)
+            if lowest_path_length > temp_path_length:
+                lowest_path_length = temp_path_length
+                print("Nowa najkrotsza sciezka ma " + str(lowest_path_length))
+        return lowest_path_length
 
     def check_possible_moves(self, x, y):
         possible_moves = []
@@ -137,19 +185,21 @@ class Day24:
     class Snapshot_augmented:
         position_x = 0
         position_y = 0
-        last_place = {}
+        visited_places = []
         steps_made = 0
 
-        def __init__(self, x, y, steps_made, last_place={}):
+        def __init__(self, x, y, steps_made):
             self.position_x = x
             self.position_y = y
-            self.last_place = last_place
             self.steps_made = steps_made
 
 Test = Day24()
 
-print(Test.find_important_points())
-print(Test.find_starting_x())
-print(Test.find_starting_y())
+# print(Test.calculate_distance_AB({"x": 177, "y": 27}, {"x": 141, "y": 35}))
+# print(Test.calculate_distance_AB({"x": 177, "y": 27}, {"x": 151, "y": 13}))
+# print(Test.points_to_visit)
+# print(Test.points_coordinates)
+# print(Test.calculate_one_path(Test.points_to_visit))
+print(Test.calculate_all_paths())
 # Test.print_map()
-Test.find_shortest_path()
+# Test.find_shortest_path()
